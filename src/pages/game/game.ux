@@ -1,0 +1,842 @@
+<template>
+  <div class="page">
+    <!-- 顶部：财神+余牌 -->
+    <div class="topbar">
+      <div class="caishen-box">
+        <text class="label">财神</text>
+        <text class="tile-text" style="color:{{caishenColor}}">{{caishenName}}</text>
+      </div>
+      <text class="wall">余{{wallCount}}</text>
+      <text class="mode-tag" show="{{mode !== 'wait'}}">{{mode === 'discard' ? '出牌' : mode === 'claim' ? '选择' : ''}}</text>
+    </div>
+
+    <!-- 对手状态 -->
+    <div class="opps">
+      <div class="opp" for="{{oppView}}">
+        <text class="opp-name">{{$item.name}}</text>
+        <text class="opp-tiles">{{$item.tileCount}}张</text>
+        <text class="opp-status" style="color:{{$item.statusColor}}">{{$item.status}}</text>
+      </div>
+    </div>
+
+    <!-- 弃牌池（上方） -->
+    <div class="pond" show="{{pondView.length > 0}}">
+      <text class="pond-title">已打出</text>
+      <text class="pond-tile" for="{{pondView}}" style="color:{{$item.color}}">{{$item.name}}</text>
+    </div>
+
+    <!-- 中央：消息 + 刚刚打出的牌 -->
+    <div class="center">
+      <text class="msg">{{message}}</text>
+      <div class="last-discard-box" show="{{lastDiscardName !== ''}}">
+        <text class="last-discard-tile" style="color:{{lastDiscardColor}}">{{lastDiscardName}}</text>
+      </div>
+    </div>
+
+    <!-- 副露区 -->
+    <div class="melds" show="{{meldView.length > 0}}">
+      <text class="meld-item" for="{{meldView}}">{{$item}}</text>
+    </div>
+
+    <!-- 动作按钮区 -->
+    <div class="actions" show="{{actions.length > 0}}">
+      <input class="act" type="button" value="{{$item.label}}" for="{{actions}}" onclick="onActionTap($item)" />
+    </div>
+
+    <!-- 底部：手牌入口 -->
+    <div class="bottom">
+      <input class="btn-hand" type="button" value="我的手牌({{handCount}})" onclick="openHandMenu" show="{{mode === 'discard' && actions.length === 0}}" />
+    </div>
+
+    <!-- 手牌选择菜单 -->
+    <div class="overlay" show="{{showHandMenu}}" onclick="closeHandMenu">
+      <div class="menu" onclick="stopPropagation">
+        <text class="menu-title">选择打出的牌</text>
+        <div class="menu-grid">
+          <div class="menu-tile" for="{{handView}}" onclick="onTileTap($item)">
+            <text class="menu-tile-name" style="color:{{$item.color}}">{{$item.name}}</text>
+          </div>
+        </div>
+        <input class="menu-close" type="button" value="取消" onclick="closeHandMenu" />
+      </div>
+    </div>
+
+    <!-- 结果浮层 -->
+    <div class="overlay" show="{{showResult}}">
+      <div class="result-card">
+        <text class="result-title">{{resultTitle}}</text>
+        <text class="result-fan">{{resultFan}}</text>
+        <text class="result-desc">{{resultDesc}}</text>
+        <input class="act" type="button" value="再来一局" onclick="startGame" />
+        <input class="act" type="button" value="返回菜单" onclick="goMenu" style="margin-top:8px;" />
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import router from "@system.router"
+import M from "../../common/mahjong.js"
+
+export default {
+  data: {
+    caishenName: '',
+    caishenColor: '#333',
+    wallCount: 0,
+    oppView: [],
+    message: '',
+    lastDiscardName: '',
+    lastDiscardColor: '#333',
+    meldView: [],
+    handView: [],
+    handCount: 0,
+    pondView: [],
+    actions: [],
+    mode: 'wait',
+    showHandMenu: false,
+    showResult: false,
+    resultTitle: '',
+    resultFan: '',
+    resultDesc: ''
+  },
+
+  onInit() {
+    this.startGame()
+  },
+  onShow() {},
+  onDestroy() {
+    M.ui.reset()
+  },
+  onBackPress() {
+    this.goMenu()
+    return true
+  },
+
+  // ============ 开始游戏 ============
+  startGame() {
+    M.ui.reset()
+    this.showResult = false
+    this.showHandMenu = false
+    M.ui.game = M.createGame()
+    this.message = '开始！财神：' + M.tileName(M.ui.game.caishen)
+    this.syncView()
+    this.later(() => this.playerDraw(), 300)
+  },
+
+  goMenu() {
+    M.ui.reset()
+    router.back()
+  },
+
+  later(fn, ms) {
+    const id = setTimeout(fn, ms)
+    M.ui.timers.push(id)
+    return id
+  },
+
+  // ============ 视图同步 ============
+  syncView() {
+    const g = M.ui.game
+    if (!g) return
+    this.caishenName = M.tileName(g.caishen)
+    this.caishenColor = M.tileColor(g.caishen)
+    this.wallCount = g.deck.length
+
+    // 对手
+    const opp = []
+    for (let i = 1; i < 4; i++) {
+      const p = g.players[i]
+      let status = ''
+      let sc = '#888'
+      if (g.winner === i) { status = '胡!'; sc = '#ffd54a' }
+      else if (g.currentPlayer === i && g.phase !== 'over') { status = '思考'; sc = '#7ad' }
+      opp.push({
+        name: p.name,
+        tileCount: p.hand.length + p.melds.reduce(s => s + 3, 0),
+        status,
+        statusColor: sc
+      })
+    }
+    this.oppView = opp
+
+    // 最后弃牌
+    if (g.lastDiscard) {
+      this.lastDiscardName = M.tileName(g.lastDiscard.code)
+      this.lastDiscardColor = M.tileColor(g.lastDiscard.code)
+    } else {
+      this.lastDiscardName = ''
+    }
+
+    // 玩家副露
+    this.meldView = g.players[0].melds.map(m =>
+      m.tiles.map(t => M.tileName(t.code)).join(' ')
+    )
+
+    // 弃牌历史池 (所有玩家弃牌，取最近16张)
+    const allDisc = []
+    for (const p of g.players) {
+      for (const d of p.discards) allDisc.push(d)
+    }
+    const tail = allDisc.slice(-16)
+    this.pondView = tail.map(d => ({
+      name: M.tileName(d.code),
+      color: M.tileColor(d.code)
+    }))
+
+    // 玩家手牌（理牌：已在引擎中排序）
+    const me = g.players[0]
+    this.handCount = me.hand.length
+    this.handView = me.hand.map(t => ({
+      id: t.id,
+      name: M.tileName(t.code),
+      color: M.tileColor(t.code),
+      code: t.code
+    }))
+
+    this.buildActions()
+  },
+
+  // ============ 动作按钮 ============
+  buildActions() {
+    const g = M.ui.game
+    if (!g || g.phase === 'over') { this.actions = []; return }
+    const acts = []
+    if (this.mode === 'discard' && g.currentPlayer === 0) {
+      const handCodes = g.players[0].hand.map(t => t.code)
+      if (M.canWin(handCodes, g.caishen)) acts.push({ type: 'hu', label: '自摸' })
+      const an = M.getAnGangCodes(handCodes)
+      const ja = M.getJiaGangCodes(handCodes, g.players[0].melds)
+      M.ui.selfGangCodes = an.concat(ja)
+      if (M.ui.selfGangCodes.length > 0) acts.push({ type: 'gang', label: '杠' })
+    } else if (this.mode === 'claim') {
+      for (const o of M.ui.claimList) {
+        if (o === 'hu') acts.push({ type: 'hu', label: '胡' })
+        else if (o === 'gang') acts.push({ type: 'gang', label: '杠' })
+        else if (o === 'peng') acts.push({ type: 'peng', label: '碰' })
+        else if (o === 'chi') acts.push({ type: 'chi', label: '吃' })
+      }
+      acts.push({ type: 'pass', label: '过' })
+    }
+    this.actions = acts
+  },
+
+  // ============ 手牌菜单 ============
+  openHandMenu() {
+    this.showHandMenu = true
+  },
+  closeHandMenu() {
+    this.showHandMenu = false
+  },
+  stopPropagation() {},
+
+  // ============ 玩家摸牌 ============
+  playerDraw() {
+    const g = M.ui.game
+    const tile = M.drawTile(g, 0)
+    if (!tile) { this.endDraw(); return }
+    g.players[0].hand.push(tile)
+    M.sortHand(g.players[0].hand)
+    M.ui.drawnTileId = tile.id
+    g.currentPlayer = 0
+    g.phase = 'discard'
+    this.mode = 'discard'
+    this.message = '你摸到一张牌'
+    this.syncView()
+  },
+
+  // ============ 玩家点牌打出 ============
+  onTileTap(item) {
+    if (this.mode !== 'discard' || M.ui.game.currentPlayer !== 0) return
+    const g = M.ui.game
+    const me = g.players[0]
+    const idx = me.hand.findIndex(t => t.id === item.id)
+    if (idx < 0) return
+    const tile = me.hand.splice(idx, 1)[0]
+    M.sortHand(me.hand)
+    M.ui.drawnTileId = -1
+    this.showHandMenu = false
+    this.doDiscard(0, tile)
+  },
+
+  // ============ 执行弃牌 ============
+  doDiscard(playerIdx, tile) {
+    const g = M.ui.game
+    g.players[playerIdx].discards.push({ code: tile.code, id: tile.id })
+    g.lastDiscard = { code: tile.code, player: playerIdx, id: tile.id }
+    g.lastGangBy = -1
+    g.phase = 'discard'
+    const who = playerIdx === 0 ? '你' : g.players[playerIdx].name
+    this.message = who + ' 打出 ' + M.tileName(tile.code)
+    this.syncView()
+    this.later(() => this.resolveClaims(playerIdx, tile.code), 200)
+  },
+
+  // ============ 弃牌后解析吃碰杠胡 ============
+  resolveClaims(discarderIdx, discardedCode) {
+    const g = M.ui.game
+    if (!M.ui.playerPassed && discarderIdx !== 0) {
+      const me = g.players[0]
+      const handCodes = me.hand.map(t => t.code)
+      const list = []
+      if (M.canHuOnDiscard(handCodes, discardedCode, g.caishen)) list.push('hu')
+      if (M.canMingGang(handCodes, discardedCode)) list.push('gang')
+      if (M.canPeng(handCodes, discardedCode)) list.push('peng')
+      if (discarderIdx === 3) {
+        const chi = M.getChiCombos(handCodes, discardedCode)
+        if (chi.length > 0) { list.push('chi'); M.ui.pendingChiCombos = chi }
+      }
+      if (list.length > 0) {
+        M.ui.claimList = list
+        this.mode = 'claim'
+        this.message = '可选择：' + list.join('/')
+        this.syncView()
+        return
+      }
+    }
+
+    // AI 胡
+    for (let i = 1; i <= 3; i++) {
+      if (i === discarderIdx) continue
+      const ai = g.players[i]
+      const hc = ai.hand.map(t => t.code)
+      if (M.canHuOnDiscard(hc, discardedCode, g.caishen)) {
+        this.later(() => this.doHu(i, discardedCode, false), 150)
+        return
+      }
+    }
+
+    // AI 杠/碰
+    for (let i = 1; i <= 3; i++) {
+      if (i === discarderIdx) continue
+      const ai = g.players[i]
+      const hc = ai.hand.map(t => t.code)
+      if (M.canMingGang(hc, discardedCode) && Math.random() < 0.7) {
+        this.later(() => this.applyGang(i, discardedCode, discarderIdx), 150)
+        return
+      }
+      if (M.canPeng(hc, discardedCode) && Math.random() < 0.55) {
+        this.later(() => this.applyPeng(i, discardedCode, discarderIdx), 150)
+        return
+      }
+    }
+
+    // AI 吃
+    const nextSeat = (discarderIdx + 1) % 4
+    if (nextSeat !== 0) {
+      const ai = g.players[nextSeat]
+      const hc = ai.hand.map(t => t.code)
+      const chi = M.getChiCombos(hc, discardedCode)
+      if (chi.length > 0 && Math.random() < 0.5) {
+        this.later(() => this.applyChi(nextSeat, discardedCode, discarderIdx, chi[0]), 150)
+        return
+      }
+    }
+
+    this.later(() => this.nextDraw(nextSeat), 150)
+  },
+
+  passClaim() {
+    M.ui.playerPassed = true
+    this.mode = 'wait'
+    M.ui.claimList = []
+    this.actions = []
+    this.message = '过'
+    const g = M.ui.game
+    this.resolveClaims(g.lastDiscard.player, g.lastDiscard.code)
+  },
+
+  // ============ 玩家点动作 ============
+  onActionTap(item) {
+    const type = item.type
+    if (type === 'pass') { this.passClaim(); return }
+    const g = M.ui.game
+    if (type === 'hu') {
+      if (this.mode === 'discard') {
+        this.doHu(0, null, true)
+      } else {
+        this.doHu(0, g.lastDiscard.code, false)
+      }
+      return
+    }
+    if (type === 'gang') {
+      if (this.mode === 'discard') {
+        this.applySelfGang()
+      } else {
+        this.applyGang(0, g.lastDiscard.code, g.lastDiscard.player)
+      }
+      return
+    }
+    if (type === 'peng') {
+      this.applyPeng(0, g.lastDiscard.code, g.lastDiscard.player)
+      return
+    }
+    if (type === 'chi') {
+      const combo = M.ui.pendingChiCombos[0]
+      this.applyChi(0, g.lastDiscard.code, g.lastDiscard.player, combo)
+      return
+    }
+  },
+
+  // ============ 副露实现 ============
+  removeLastDiscard(playerIdx) {
+    const g = M.ui.game
+    const list = g.players[playerIdx].discards
+    if (list.length > 0) list.pop()
+  },
+
+  applyPeng(idx, code, fromIdx) {
+    const g = M.ui.game
+    const p = g.players[idx]
+    const taken = []
+    for (let i = p.hand.length - 1; i >= 0 && taken.length < 2; i--) {
+      if (p.hand[i].code === code) taken.push(p.hand.splice(i, 1)[0])
+    }
+    this.removeLastDiscard(fromIdx)
+    taken.push({ code, id: -1 })
+    p.melds.push({ type: 'peng', code, tiles: taken })
+    M.sortHand(p.hand)
+    g.currentPlayer = idx
+    g.lastDiscard = null
+    this.lastDiscardName = ''
+    M.ui.playerPassed = false
+    M.ui.pendingChiCombos = []
+    this.message = p.name + ' 碰 ' + M.tileName(code)
+    this.syncView()
+    this.later(() => {
+      if (idx === 0) {
+        this.mode = 'discard'
+        M.ui.drawnTileId = -1
+        this.message = '碰后请打出'
+        this.syncView()
+      } else {
+        this.aiDiscard(idx)
+      }
+    }, 250)
+  },
+
+  applyGang(idx, code, fromIdx) {
+    const g = M.ui.game
+    const p = g.players[idx]
+    const taken = []
+    for (let i = p.hand.length - 1; i >= 0 && taken.length < 3; i--) {
+      if (p.hand[i].code === code) taken.push(p.hand.splice(i, 1)[0])
+    }
+    this.removeLastDiscard(fromIdx)
+    taken.push({ code, id: -1 })
+    p.melds.push({ type: 'gang', code, tiles: taken })
+    M.sortHand(p.hand)
+    g.currentPlayer = idx
+    g.lastGangBy = idx
+    g.lastDiscard = null
+    this.lastDiscardName = ''
+    M.ui.playerPassed = false
+    this.message = p.name + ' 杠 ' + M.tileName(code)
+    this.syncView()
+    this.later(() => this.gangDraw(idx), 300)
+  },
+
+  applySelfGang() {
+    const g = M.ui.game
+    const me = g.players[0]
+    const code = M.ui.selfGangCodes[0]
+    const jiaIdx = me.melds.findIndex(m => m.type === 'peng' && m.code === code)
+    if (jiaIdx >= 0) {
+      const ti = me.hand.findIndex(t => t.code === code)
+      const t = me.hand.splice(ti, 1)[0]
+      me.melds[jiaIdx].type = 'gang'
+      me.melds[jiaIdx].tiles.push(t)
+    } else {
+      const taken = []
+      for (let i = me.hand.length - 1; i >= 0 && taken.length < 4; i--) {
+        if (me.hand[i].code === code) taken.push(me.hand.splice(i, 1)[0])
+      }
+      me.melds.push({ type: 'gang', code, tiles: taken })
+    }
+    M.sortHand(me.hand)
+    g.lastGangBy = 0
+    M.ui.selfGangCodes = []
+    this.message = '你 杠 ' + M.tileName(code)
+    this.syncView()
+    this.later(() => this.gangDraw(0), 250)
+  },
+
+  gangDraw(idx) {
+    const g = M.ui.game
+    const tile = M.drawTile(g, idx)
+    if (!tile) { this.endDraw(); return }
+    g.players[idx].hand.push(tile)
+    M.sortHand(g.players[idx].hand)
+    if (idx === 0) {
+      M.ui.drawnTileId = tile.id
+      this.mode = 'discard'
+      this.message = '杠后摸牌'
+      this.syncView()
+    } else {
+      this.syncView()
+      this.later(() => this.aiDiscard(idx), 250)
+    }
+  },
+
+  applyChi(idx, code, fromIdx, combo) {
+    const g = M.ui.game
+    const p = g.players[idx]
+    const withCodes = combo.with
+    const taken = []
+    for (const wc of withCodes) {
+      const i = p.hand.findIndex(t => t.code === wc)
+      if (i >= 0) taken.push(p.hand.splice(i, 1)[0])
+    }
+    this.removeLastDiscard(fromIdx)
+    taken.push({ code, id: -1 })
+    p.melds.push({ type: 'chi', code, tiles: taken })
+    M.sortHand(p.hand)
+    g.currentPlayer = idx
+    g.lastDiscard = null
+    this.lastDiscardName = ''
+    M.ui.playerPassed = false
+    M.ui.pendingChiCombos = []
+    this.message = p.name + ' 吃 ' + M.tileName(code)
+    this.syncView()
+    this.later(() => {
+      if (idx === 0) {
+        this.mode = 'discard'
+        M.ui.drawnTileId = -1
+        this.message = '吃后请打出'
+        this.syncView()
+      } else {
+        this.aiDiscard(idx)
+      }
+    }, 250)
+  },
+
+  // ============ AI 回合 ============
+  aiDiscard(idx) {
+    const g = M.ui.game
+    const p = g.players[idx]
+    this.mode = 'wait'
+    this.message = p.name + ' 思考中'
+    this.syncView()
+    this.later(() => {
+      const handCodes = p.hand.map(t => t.code)
+      if (M.canWin(handCodes, g.caishen)) {
+        this.doHu(idx, null, true)
+        return
+      }
+      const discardCode = M.aiChooseDiscard(handCodes, g.caishen, p.melds)
+      const ti = p.hand.findIndex(t => t.code === discardCode)
+      const tile = p.hand.splice(ti, 1)[0]
+      M.sortHand(p.hand)
+      this.doDiscard(idx, tile)
+    }, 300)
+  },
+
+  nextDraw(seat) {
+    const g = M.ui.game
+    if (g.deck.length === 0) { this.endDraw(); return }
+    M.ui.playerPassed = false
+    g.currentPlayer = seat
+    if (seat === 0) {
+      this.playerDraw()
+    } else {
+      this.mode = 'wait'
+      this.message = g.players[seat].name + ' 摸牌'
+      this.syncView()
+      this.later(() => {
+        const tile = M.drawTile(g, seat)
+        if (!tile) { this.endDraw(); return }
+        g.players[seat].hand.push(tile)
+        M.sortHand(g.players[seat].hand)
+        this.syncView()
+        this.later(() => this.aiDiscard(seat), 225)
+      }, 200)
+    }
+  },
+
+  // ============ 胡牌结算 ============
+  doHu(idx, winCode, isZimo) {
+    const g = M.ui.game
+    g.phase = 'over'
+    g.winner = idx
+    g.winTile = winCode
+    const info = M.calcFan(g, idx, winCode || g.players[idx].hand[0].code, isZimo, !isZimo)
+    g.winInfo = info
+    this.mode = 'over'
+    this.syncView()
+    this.showResult = true
+    if (idx === 0) {
+      this.resultTitle = isZimo ? '自摸！' : '胡了！'
+    } else {
+      this.resultTitle = g.players[idx].name + (isZimo ? ' 自摸' : ' 胡了')
+    }
+    this.resultFan = info.fan + ' 番'
+    this.resultDesc = info.desc.join(' · ')
+  },
+
+  endDraw() {
+    const g = M.ui.game
+    g.phase = 'over'
+    this.mode = 'over'
+    this.showResult = true
+    this.resultTitle = '流局'
+    this.resultFan = '荒牌'
+    this.resultDesc = '牌墙已摸完'
+    this.syncView()
+  }
+}
+</script>
+
+<style>
+.page {
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background-color: #0a1a2a;
+  padding: 6px 8px;
+}
+
+/* 顶部 */
+.topbar {
+  flex-direction: row;
+  align-items: center;
+  height: 28px;
+  margin-bottom: 4px;
+}
+.label {
+  font-size: 11px;
+  color: #9fb3d1;
+  margin-right: 4px;
+}
+.tile-text {
+  font-size: 16px;
+  font-weight: bold;
+}
+.wall {
+  font-size: 12px;
+  color: #cfe0ff;
+  margin-left: 12px;
+}
+.mode-tag {
+  font-size: 11px;
+  color: #7fcf9a;
+  margin-left: 8px;
+  background-color: #1a3a2a;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+/* 对手 */
+.opps {
+  flex-direction: row;
+  height: 44px;
+  margin-bottom: 4px;
+}
+.opp {
+  flex: 1;
+  background-color: #132440;
+  border-radius: 5px;
+  margin: 0 2px;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 4px;
+}
+.opp-name {
+  font-size: 11px;
+  color: #d6e2f5;
+}
+.opp-tiles {
+  font-size: 10px;
+  color: #8aa0c4;
+}
+.opp-status {
+  font-size: 11px;
+  font-weight: bold;
+  margin-top: 1px;
+}
+
+/* 弃牌池 */
+.pond {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  padding: 2px 6px;
+  background-color: #0a1628;
+  border-bottom: 1px solid #2a4060;
+}
+.pond-title {
+  font-size: 10px;
+  color: #8899aa;
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+.pond-tile {
+  font-size: 11px;
+  font-weight: bold;
+  background-color: #f3f5f8;
+  border-radius: 2px;
+  padding: 1px 3px;
+  margin: 1px;
+}
+
+/* 中央 */
+.center {
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #0a3320;
+  border-radius: 8px;
+  margin-bottom: 4px;
+}
+.msg {
+  font-size: 13px;
+  color: #e8f0ff;
+  margin-bottom: 6px;
+}
+.last-discard-box {
+  background-color: #fff;
+  padding: 4px 12px;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+.last-discard-tile {
+  font-size: 28px;
+  font-weight: bold;
+}
+
+/* 副露 */
+.melds {
+  flex-direction: row;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+  min-height: 18px;
+}
+.meld-item {
+  font-size: 11px;
+  color: #cfe0ff;
+  background-color: #1a2b4a;
+  padding: 1px 4px;
+  margin: 1px 3px 1px 0;
+  border-radius: 3px;
+}
+
+/* 动作按钮 */
+.actions {
+  flex-direction: row;
+  justify-content: center;
+  height: 36px;
+  margin-bottom: 4px;
+}
+.act {
+  height: 32px;
+  margin: 0 3px;
+  border-radius: 5px;
+  font-size: 14px;
+  color: #fff;
+  border: none;
+  padding: 0 10px;
+  background-color: #2563d6;
+}
+
+/* 底部 */
+.bottom {
+  height: 38px;
+  align-items: center;
+  justify-content: center;
+}
+.btn-hand {
+  width: 180px;
+  height: 34px;
+  border-radius: 6px;
+  font-size: 15px;
+  color: #fff;
+  background-color: #2a5a8a;
+  border: none;
+}
+
+/* 手牌菜单 */
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  align-items: center;
+  justify-content: center;
+}
+.menu {
+  width: 100%;
+  height: 100%;
+  flex-direction: row;
+  background-color: #000;
+}
+.menu-title {
+  width: 30px;
+  font-size: 12px;
+  color: #fff;
+  writing-mode: vertical-lr;
+  margin-left: 4px;
+}
+.menu-grid {
+  flex: 1;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-content: flex-start;
+  padding: 4px;
+}
+.menu-tile {
+  width: 56px;
+  height: 52px;
+  background-color: #fff;
+  border-radius: 4px;
+  margin: 3px;
+  align-items: center;
+  justify-content: center;
+}
+.menu-tile-name {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+}
+.menu-close {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  height: 36px;
+  width: 60px;
+  font-size: 14px;
+  color: #fff;
+  background-color: #00c853;
+  border: none;
+  border-radius: 18px;
+}
+
+/* 结果 */
+.result-card {
+  width: 180px;
+  background-color: #132440;
+  border-radius: 10px;
+  border: 1px solid #3a5580;
+  padding: 12px;
+  flex-direction: column;
+  align-items: center;
+}
+.result-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #ffd54a;
+  margin-bottom: 6px;
+}
+.result-fan {
+  font-size: 14px;
+  color: #7fcf9a;
+  margin-bottom: 4px;
+}
+.result-desc {
+  font-size: 11px;
+  color: #cfe0ff;
+  text-align: center;
+  margin-bottom: 12px;
+}
+</style>
