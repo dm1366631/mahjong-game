@@ -1,4 +1,4 @@
-// 杭州麻将游戏引擎 (基于腾讯《麻将来了》杭州麻将规则)
+
 // 136张牌：万/条/筒(1-9各4张) + 东南西北中发白(各4张)
 // 核心特色：白板固定为财神（百搭牌），无财神也可胡
 
@@ -39,6 +39,35 @@ function tileColor(code) {
   if (n === 6) return '#1f9d3f' // 发
   if (n === 7) return '#9a9a9a' // 白
   return '#333333'
+}
+
+// 牌图片路径
+function tileImg(code) {
+  return '/common/tiles/' + code + '.png'
+}
+
+// 牌面样式模式: 'text' | 'placeholder' | 'custom'
+let tileStyleMode = 'custom'
+
+function setTileStyle(mode) {
+  if (['text', 'placeholder', 'custom'].includes(mode)) {
+    tileStyleMode = mode
+  }
+}
+
+function getTileStyle() {
+  return tileStyleMode
+}
+
+function getTileDisplay(code) {
+  const mode = tileStyleMode
+  if (mode === 'text') {
+    return { type: 'text', name: tileName(code), color: tileColor(code) }
+  }
+  if (mode === 'placeholder') {
+    return { type: 'image', img: '/common/tiles/placeholder/' + code + '.png' }
+  }
+  return { type: 'image', img: '/common/tiles/' + code + '.png' }
 }
 
 function isHonor(code) {
@@ -406,15 +435,21 @@ function aiDecideClaim(state, playerIdx, discarded) {
   if (canHuOnDiscard(handCodes, discarded, state.caishen)) {
     return { type: 'hu', code: discarded }
   }
-  // 杠
-  if (canMingGang(handCodes, discarded) && Math.random() < 0.7) {
+  // 杠 - 90%概率
+  if (canMingGang(handCodes, discarded) && Math.random() < 0.9) {
     return { type: 'gang', code: discarded }
   }
-  // 碰
-  if (canPeng(handCodes, discarded) && Math.random() < 0.5) {
+  // 碰 - 85%概率
+  if (canPeng(handCodes, discarded) && Math.random() < 0.85) {
     return { type: 'peng', code: discarded }
   }
-  // 吃 (仅上家)
+  // 吃 (仅上家) - 75%概率
+  if (state.lastDiscard.player === (playerIdx + 3) % 4) {
+    const chiResult = getChiCombos(handCodes, discarded)
+    if (chiResult && chiResult.length > 0 && Math.random() < 0.75) {
+      return chiResult[0]
+    }
+  }
   return null
 }
 
@@ -522,6 +557,10 @@ export default {
   allTileCodes,
   tileName,
   tileColor,
+  tileImg,
+  setTileStyle,
+  getTileStyle,
+  getTileDisplay,
   isHonor,
   tileNum,
   tileSuit,

@@ -1,0 +1,205 @@
+<template>
+  <div class="page">
+    <text class="title">关于</text>
+
+    <div class="content">
+      <text class="app-name">杭州麻将</text>
+      <text class="version">版本 {{version}}</text>
+      
+      <div class="info-section">
+        <text class="info-title">开发者</text>
+        <text class="info-text">openblack</text>
+      </div>
+      
+      <div class="info-section">
+        <text class="info-title">规则</text>
+        <text class="info-text">杭州麻将（白板财神）</text>
+      </div>
+      
+      <div class="info-section">
+        <text class="info-title">适配设备</text>
+        <text class="info-text">小米手环10 NFC</text>
+      </div>
+      
+      <div class="version-box" onclick="onVersionClick">
+        <text class="version-label">版本号</text>
+        <input class="version-input" type="text" value="{{version}}" disabled="true" />
+      </div>
+      
+      <text class="unlock-hint" show="{{clickCount > 0 && clickCount < unlockCount}}">
+        再点击{{unlockCount - clickCount}}次解锁隐藏选项
+      </text>
+      
+      <text class="unlock-success" show="{{placeholderUnlocked}}">
+        ✓ 已解锁占位图样式
+      </text>
+    </div>
+
+    <div class="footer">
+      <input class="btn back-btn" type="button" value="返回" onclick="goBack" />
+    </div>
+  </div>
+</template>
+
+<script>
+import router from "@system.router"
+import storage from "@system.storage"
+
+export default {
+  private: {
+    version: '1.0.0',
+    clickCount: 0,
+    unlockCount: 7,
+    placeholderUnlocked: false
+  },
+  
+  onInit() {
+    storage.get({
+      key: 'placeholderUnlocked',
+      success: (data) => {
+        this.placeholderUnlocked = (data === 'true')
+      },
+      fail: () => {}
+    })
+  },
+  
+  onVersionClick() {
+    if (this.placeholderUnlocked) return
+    
+    this.clickCount++
+    
+    if (this.clickCount >= this.unlockCount) {
+      this.placeholderUnlocked = true
+      storage.set({
+        key: 'placeholderUnlocked',
+        value: 'true',
+        success: () => {},
+        fail: () => {}
+      })
+      this.clickCount = 0
+    }
+  },
+  
+  goBack() {
+    router.back()
+  }
+}
+</script>
+
+<style>
+.page {
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background-color: #0f1729;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #ffd54a;
+  text-align: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #2a4060;
+}
+
+.content {
+  flex: 1;
+  flex-direction: column;
+  padding: 12px;
+  align-items: center;
+}
+
+.app-name {
+  font-size: 22px;
+  font-weight: bold;
+  color: #ffd54a;
+  margin-bottom: 4px;
+}
+
+.version {
+  font-size: 13px;
+  color: #8aa0c4;
+  margin-bottom: 16px;
+}
+
+.info-section {
+  width: 100%;
+  flex-direction: row;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background-color: #1a2b4a;
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+.info-title {
+  font-size: 13px;
+  color: #8aa0c4;
+}
+
+.info-text {
+  font-size: 13px;
+  color: #cfe0ff;
+}
+
+.version-box {
+  width: 100%;
+  flex-direction: column;
+  padding: 10px;
+  background-color: #132440;
+  border-radius: 6px;
+  margin-top: 12px;
+  align-items: center;
+}
+
+.version-label {
+  font-size: 12px;
+  color: #8aa0c4;
+  margin-bottom: 6px;
+}
+
+.version-input {
+  width: 90px;
+  height: 32px;
+  font-size: 13px;
+  color: #cfe0ff;
+  text-align: center;
+  background-color: #1a2b4a;
+  border: 1px solid #3a5580;
+  border-radius: 4px;
+}
+
+.unlock-hint {
+  font-size: 11px;
+  color: #7fcf9a;
+  margin-top: 8px;
+}
+
+.unlock-success {
+  font-size: 13px;
+  color: #7fcf9a;
+  margin-top: 8px;
+  font-weight: bold;
+}
+
+.footer {
+  padding: 8px 12px;
+  border-top: 1px solid #2a4060;
+  align-items: center;
+}
+
+.btn {
+  height: 36px;
+  border-radius: 6px;
+  font-size: 15px;
+  border: none;
+}
+
+.back-btn {
+  width: 120px;
+  color: #cfe0ff;
+  background-color: transparent;
+  border: 1px solid #3a5580;
+}
+</style>

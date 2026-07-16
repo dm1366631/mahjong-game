@@ -11,6 +11,9 @@
   "features": [
     {
       "name": "system.router"
+    },
+    {
+      "name": "system.storage"
     }
   ],
   "config": {
@@ -25,6 +28,12 @@
       },
       "pages/game": {
         "component": "game"
+      },
+      "pages/settings": {
+        "component": "settings"
+      },
+      "pages/about": {
+        "component": "about"
       }
     }
   }
