@@ -1,15 +1,17 @@
 <template>
   <div class="page">
     <text class="title">杭州麻将</text>
-    <text class="subtitle">小米手环版</text>
     <text class="score" show="{{score !== ''}}">积分: {{score}}</text>
 
     <div class="btn-area">
-      <input class="btn start" type="button" value="开始游戏" onclick="startGame" />
-      <input class="btn rules-btn" type="button" value="规则详解" onclick="showRules" />
-      <input class="btn settings-btn" type="button" value="设置" onclick="goSettings" />
-      <input class="btn donate-btn" type="button" value="赞助" onclick="showDonate" />
+      <input class="btn" type="button" value="开始游戏" onclick="startGame" />
+      <input class="btn" type="button" value="规则详解" onclick="showRules" />
+      <input class="btn" type="button" value="关于" onclick="goAbout" />
+      <input class="btn" type="button" value="赞助" onclick="showDonate" />
     </div>
+
+    <!-- 底层遮罩 -->
+    <div class="bg-mask" show="{{showDonatePanel || showRulesPanel}}"></div>
 
     <div class="overlay" show="{{showDonatePanel}}">
       <div class="donate-panel">
@@ -115,8 +117,8 @@ export default {
   closeDonate() {
     this.showDonatePanel = false
   },
-  goSettings() {
-    router.push({ uri: "/pages/settings" })
+  goAbout() {
+    router.push({ uri: "/pages/about" })
   }
 }
 </script>
@@ -127,21 +129,17 @@ export default {
   align-items: center;
   width: 100%;
   height: 100%;
-  background-color: #0f1729;
+  background-color: #000000;
+  font-family: MiSans;
 }
 .title {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: bold;
-  color: #ffd54a;
-  margin-top: 24px;
-}
-.subtitle {
-  font-size: 15px;
-  color: #8aa0c4;
-  margin-top: 4px;
+  color: #ffffff;
+  margin-top: 52px;
 }
 .score {
-  font-size: 16px;
+  font-size: 18px;
   color: #7fcf9a;
   margin-top: 6px;
 }
@@ -154,37 +152,27 @@ export default {
 }
 .btn {
   width: 180px;
-  height: 48px;
-  border-radius: 8px;
-  font-size: 20px;
+  height: 50px;
+  border-radius: 45px;
+  font-size: 22px;
+  font-family: MiSans;
   color: #ffffff;
   border: none;
-  margin: 10px 0;
-}
-.start {
-  background-color: #e23b3b;
-}
-.rules-btn {
-  background-color: #2a5a8a;
-}
-.settings-btn {
-  background-color: #555555;
-}
-.donate-btn {
-  background-color: #ff9800;
+  margin: 8px 0;
+  background-color: #262626;
 }
 
 .donate-panel {
   width: 200px;
-  background-color: #132440;
+  background-color: #000000;
   border-radius: 10px;
-  border: 1px solid #3a5580;
+  border: 1px solid #333;
   flex-direction: column;
   align-items: center;
   padding: 14px;
 }
 .donate-title {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: bold;
   color: #ffd54a;
   margin-bottom: 10px;
@@ -196,7 +184,7 @@ export default {
   margin-bottom: 8px;
 }
 .donate-desc {
-  font-size: 13px;
+  font-size: 15px;
   color: #cfe0ff;
   margin-bottom: 10px;
 }
@@ -205,9 +193,21 @@ export default {
   height: 38px;
   width: 100%;
   border-radius: 8px;
-  font-size: 16px;
+  font-size: 17px;
+  font-family: MiSans;
   color: #fff;
   border: none;
+}
+
+/* 底层遮罩 */
+.bg-mask {
+  position: absolute;
+  top: -100px;
+  left: -100px;
+  width: 600px;
+  height: 600px;
+  background-color: #000000;
+  z-index: 0;
 }
 
 .overlay {
@@ -223,14 +223,14 @@ export default {
 .rules-panel {
   width: 280px;
   height: 380px;
-  background-color: #132440;
+  background-color: #000000;
   border-radius: 10px;
-  border: 1px solid #3a5580;
+  border: 1px solid #333;
   flex-direction: column;
   padding: 14px;
 }
 .rules-panel-title {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: bold;
   color: #ffd54a;
   text-align: center;
@@ -242,14 +242,14 @@ export default {
   overflow: scroll;
 }
 .rules-section {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: bold;
   color: #7fcf9a;
   margin-top: 8px;
   margin-bottom: 4px;
 }
 .rules-text {
-  font-size: 12px;
+  font-size: 14px;
   color: #cfe0ff;
   margin: 2px 0;
 }
@@ -259,7 +259,8 @@ export default {
   height: 38px;
   width: 100%;
   border-radius: 8px;
-  font-size: 16px;
+  font-size: 17px;
+  font-family: MiSans;
   color: #fff;
   border: none;
 }

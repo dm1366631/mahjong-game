@@ -1,14 +1,8 @@
 <template>
   <div class="page">
-    <!-- 顶部：财神+余牌 -->
+    <!-- 顶部：余牌 -->
     <div class="topbar">
-      <div class="caishen-box">
-        <text class="label">财神</text>
-        <image class="tile-img-small" src="{{caishenDisplay.img}}" if="{{caishenDisplay.type === 'image'}}" />
-        <text class="tile-text-small" style="color:{{caishenDisplay.color}}" if="{{caishenDisplay.type === 'text'}}">{{caishenDisplay.name}}</text>
-      </div>
       <text class="wall">余{{wallCount}}</text>
-      <text class="mode-tag" show="{{mode !== 'wait'}}">{{mode === 'discard' ? '出牌' : mode === 'claim' ? '选择' : ''}}</text>
     </div>
 
     <!-- 对手状态 -->
@@ -29,8 +23,7 @@
     <div class="pond" show="{{pondView.length > 0}}">
       <text class="pond-title">已打出</text>
       <div for="{{pondView}}">
-        <image class="pond-tile-img" src="{{$item.img}}" if="{{$item.type === 'image'}}" />
-        <text class="pond-tile-text" style="color:{{$item.color}}" if="{{$item.type === 'text'}}">{{$item.name}}</text>
+        <text class="pond-tile-text" style="color:{{$item.color}}">{{$item.name}}</text>
       </div>
     </div>
 
@@ -38,16 +31,14 @@
     <div class="center">
       <text class="msg">{{message}}</text>
       <div class="last-discard-box" show="{{lastDiscardName !== ''}}">
-        <image class="last-discard-img" src="{{lastDiscardDisplay.img}}" if="{{lastDiscardDisplay.type === 'image'}}" />
-        <text class="last-discard-text" style="color:{{lastDiscardDisplay.color}}" if="{{lastDiscardDisplay.type === 'text'}}">{{lastDiscardDisplay.name}}</text>
+        <text class="last-discard-text" style="color:{{lastDiscardDisplay.color}}">{{lastDiscardDisplay.name}}</text>
       </div>
     </div>
 
     <!-- 副露区 -->
     <div class="melds" show="{{meldView.length > 0}}">
       <div for="{{meldView}}" style="margin-left:{{$item.first ? '6px' : '0px'}}">
-        <image class="meld-tile-img" src="{{$item.img}}" if="{{$item.type === 'image'}}" />
-        <text class="meld-tile-text" style="color:{{$item.color}}" if="{{$item.type === 'text'}}">{{$item.name}}</text>
+        <text class="meld-tile-text" style="color:{{$item.color}}">{{$item.name}}</text>
       </div>
     </div>
 
@@ -61,14 +52,16 @@
       <input class="btn-hand" type="button" value="我的手牌({{handCount}})" onclick="openHandMenu" show="{{mode === 'discard' && actions.length === 0}}" />
     </div>
 
+    <!-- 底层遮罩 -->
+    <div class="bg-mask" show="{{showHandMenu || showGameMenu || showResult}}"></div>
+
     <!-- 手牌选择菜单 -->
     <div class="overlay" show="{{showHandMenu}}" onclick="closeHandMenu">
       <div class="menu" onclick="stopPropagation">
         <text class="menu-title">选择打出的牌</text>
         <div class="menu-grid">
           <div class="menu-tile" for="{{handView}}" onclick="onTileTap($item)">
-            <image class="menu-tile-img" src="{{$item.img}}" if="{{$item.type === 'image'}}" />
-            <text class="menu-tile-text" style="color:{{$item.color}}" if="{{$item.type === 'text'}}">{{$item.name}}</text>
+            <text class="menu-tile-text" style="color:{{$item.color}}">{{$item.name}}</text>
           </div>
         </div>
         <div class="menu-footer">
@@ -107,12 +100,12 @@ import M from "../../common/mahjong.js"
 
 export default {
   data: {
-    caishenDisplay: { type: 'image', img: '', name: '', color: '#333' },
+    caishenDisplay: { type: 'text', img: '', name: '', color: '#333' },
     wallCount: 0,
     oppView: [],
     message: '',
     lastDiscardName: '',
-    lastDiscardDisplay: { type: 'image', img: '', name: '', color: '#333' },
+    lastDiscardDisplay: { type: 'text', img: '', name: '', color: '#333' },
     meldView: [],
     handView: [],
     handCount: 0,
@@ -129,22 +122,7 @@ export default {
   },
 
   onInit() {
-    this.loadStyle()
-  },
-  
-  loadStyle() {
-    storage.get({
-      key: 'tileStyle',
-      success: (data) => {
-        if (data && ['text', 'placeholder', 'custom'].includes(data)) {
-          M.setTileStyle(data)
-        }
-        this.startGame()
-      },
-      fail: () => {
-        this.startGame()
-      }
-    })
+    this.startGame()
   },
   onShow() {},
   onDestroy() {
@@ -161,7 +139,7 @@ export default {
     this.showResult = false
     this.showHandMenu = false
     M.ui.game = M.createGame()
-    this.message = '开始！财神：' + M.tileName(M.ui.game.caishen)
+    this.message = '开始！'
     this.syncView()
     this.later(() => this.playerDraw(), 300)
   },
@@ -208,7 +186,7 @@ export default {
       this.lastDiscardDisplay = M.getTileDisplay(g.lastDiscard.code)
     } else {
       this.lastDiscardName = ''
-      this.lastDiscardDisplay = { type: 'image', img: '', name: '', color: '#333' }
+      this.lastDiscardDisplay = { type: 'text', img: '', name: '', color: '#333' }
     }
 
     // 玩家副露（每组用图片显示，first=true 表示该组首张左侧加分隔）
@@ -358,7 +336,8 @@ export default {
       if (list.length > 0) {
         M.ui.claimList = list
         this.mode = 'claim'
-        this.message = '可选择：' + list.join('/')
+        const claimNames = { hu: '胡', gang: '杠', peng: '碰', chi: '吃' }
+        this.message = '可选择：' + list.map(c => claimNames[c] || c).join('/')
         this.syncView()
         return
       }
@@ -669,90 +648,62 @@ export default {
   flex-direction: column;
   width: 100%;
   height: 100%;
-  background-color: #0a1a2a;
-  padding: 6px 8px;
+  background-color: #000000;
+  font-family: MiSans;
+  padding: 10px 6px;
+  padding-top: 14px;
+  padding-bottom: 24px;
 }
 
 /* 顶部 */
 .topbar {
   flex-direction: row;
   align-items: center;
-  height: 32px;
+  justify-content: center;
+  height: 26px;
   margin-bottom: 4px;
 }
-.label {
-  font-size: 13px;
-  color: #9fb3d1;
-  margin-right: 4px;
-}
-.tile-text {
-  font-size: 18px;
-  font-weight: bold;
-}
-.tile-img-small {
-  width: 24px;
-  height: 32px;
-  border-radius: 3px;
-}
-.tile-text-small {
-  font-size: 16px;
-  font-weight: bold;
-  width: 36px;
-  text-align: center;
-}
 .wall {
-  font-size: 14px;
+  font-size: 15px;
   color: #cfe0ff;
-  margin-left: 12px;
 }
-.mode-tag {
-  font-size: 13px;
-  color: #7fcf9a;
-  margin-left: 8px;
-  background-color: #1a3a2a;
-  padding: 2px 6px;
-  border-radius: 3px;
-}
-
 /* 对手 */
 .opps {
   flex-direction: row;
-  height: 56px;
+  height: 74px;
   margin-bottom: 4px;
 }
 .opp {
   flex: 1;
-  background-color: #132440;
+  background-color: #262626;
   border-radius: 5px;
   margin: 0 2px;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 2px 3px;
+  padding: 4px 2px;
 }
 .opp-name {
-  font-size: 12px;
+  font-size: 14px;
   color: #d6e2f5;
 }
 .opp-dealer {
-  font-size: 10px;
+  font-size: 11px;
   color: #ffd54a;
 }
 .opp-status {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: bold;
-  margin-top: 1px;
 }
 
 /* 操作记录 */
 .logs {
   flex-direction: row;
   flex-wrap: wrap;
-  justify-content: flex-start;
   margin-bottom: 4px;
 }
 .log-item {
-  font-size: 11px;
+  font-size: 13px;
   padding: 1px 4px;
   background-color: rgba(0,0,0,0.3);
   border-radius: 3px;
@@ -765,40 +716,25 @@ export default {
   flex-direction: row;
   flex-wrap: wrap;
   justify-content: flex-start;
-  padding: 3px 6px;
-  background-color: #0a1628;
-  border-bottom: 1px solid #2a4060;
+  padding: 3px 5px;
+  background-color: #000000;
+  border-bottom: 1px solid #333;
 }
 .pond-title {
-  font-size: 12px;
+  font-size: 14px;
   color: #8899aa;
   margin-right: 4px;
   flex-shrink: 0;
 }
-.pond-tile {
+.pond-tile-text {
   font-size: 13px;
   font-weight: bold;
+  font-family: sans-serif;
   background-color: #f3f5f8;
   border-radius: 2px;
-  padding: 2px 4px;
-  margin: 1px;
-}
-.pond-tile-img {
-  width: 18px;
-  height: 24px;
-  margin: 1px;
-  border-radius: 2px;
-}
-.pond-tile-text {
-  font-size: 11px;
-  font-weight: bold;
-  background-color: #f3f5f8;
-  border-radius: 2px;
-  padding: 2px 4px;
+  padding: 1px 4px;
   margin: 1px;
   white-space: nowrap;
-  width: 30px;
-  text-align: center;
 }
 
 /* 中央 */
@@ -807,33 +743,26 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: #0a3320;
-  border-radius: 8px;
+  background-color: #000000;
+  border-radius: 6px;
   margin-bottom: 4px;
 }
 .msg {
-  font-size: 15px;
+  font-size: 17px;
   color: #e8f0ff;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
+  text-align: center;
 }
 .last-discard-box {
   background-color: #fff;
-  padding: 4px 12px;
-  border-radius: 6px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-}
-.last-discard-tile {
-  font-size: 32px;
-  font-weight: bold;
-}
-.last-discard-img {
-  width: 54px;
-  height: 72px;
-  border-radius: 4px;
+  padding: 3px 10px;
+  border-radius: 5px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 .last-discard-text {
-  font-size: 28px;
+  font-size: 30px;
   font-weight: bold;
+  font-family: sans-serif;
   white-space: nowrap;
   text-align: center;
 }
@@ -843,68 +772,64 @@ export default {
   flex-direction: row;
   flex-wrap: wrap;
   margin-bottom: 4px;
-  min-height: 22px;
+  min-height: 20px;
   align-items: center;
 }
-.meld-item {
-  font-size: 13px;
-  color: #cfe0ff;
-  background-color: #1a2b4a;
-  padding: 2px 6px;
-  margin: 1px 3px 1px 0;
-  border-radius: 3px;
-}
-.meld-tile-img {
-  width: 18px;
-  height: 24px;
-  margin: 1px 0;
-  border-radius: 2px;
-}
 .meld-tile-text {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: bold;
+  font-family: sans-serif;
   color: #cfe0ff;
-  background-color: #1a2b4a;
-  padding: 2px 6px;
-  margin: 1px 3px 1px 0;
+  background-color: #000000;
   border-radius: 3px;
   white-space: nowrap;
-  width: 32px;
-  text-align: center;
 }
 
 /* 动作按钮 */
 .actions {
   flex-direction: row;
   justify-content: center;
-  height: 40px;
+  height: 38px;
   margin-bottom: 4px;
 }
 .act {
-  height: 36px;
-  margin: 0 3px;
-  border-radius: 5px;
+  height: 38px;
+  margin: 0 4px;
+  border-radius: 19px;
   font-size: 16px;
+  font-family: MiSans;
   color: #fff;
   border: none;
-  padding: 0 12px;
-  background-color: #2563d6;
+  padding: 0 14px;
+  background-color: #262626;
 }
 
 /* 底部 */
 .bottom {
-  height: 42px;
+  height: 38px;
   align-items: center;
   justify-content: center;
 }
 .btn-hand {
-  width: 180px;
-  height: 38px;
-  border-radius: 6px;
+  width: 160px;
+  height: 36px;
+  border-radius: 18px;
   font-size: 17px;
+  font-family: MiSans;
   color: #fff;
-  background-color: #2a5a8a;
+  background-color: #262626;
   border: none;
+}
+
+/* 底层遮罩 */
+.bg-mask {
+  position: absolute;
+  top: -100px;
+  left: -100px;
+  width: 600px;
+  height: 600px;
+  background-color: #000000;
+  z-index: 0;
 }
 
 /* 手牌菜单 */
@@ -914,131 +839,126 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: rgba(0, 0, 0, 0.9);
   align-items: center;
   justify-content: center;
 }
 .menu {
   width: 100%;
   height: 100%;
-  flex-direction: row;
+  flex-direction: column;
   background-color: #000;
+  padding: 10px 4px;
+  padding-bottom: 44px;
 }
 .menu-title {
-  width: 34px;
-  font-size: 14px;
+  font-size: 16px;
   color: #fff;
-  writing-mode: vertical-lr;
-  margin-left: 4px;
+  text-align: center;
+  margin-top: 10px;
+  margin-bottom: 5px;
 }
 .menu-grid {
   flex: 1;
   flex-direction: row;
   flex-wrap: wrap;
-  justify-content: flex-start;
+  justify-content: center;
   align-content: flex-start;
-  padding: 4px;
+  padding: 2px;
 }
 .menu-tile {
-  width: 45px;
-  height: 60px;
+  width: 40px;
+  height: 52px;
   background-color: #fff;
-  border-radius: 4px;
-  margin: 3px;
+  border-radius: 3px;
+  margin: 2px;
   align-items: center;
   justify-content: center;
 }
-.menu-tile-name {
-  font-size: 20px;
-  font-weight: bold;
-  color: #333;
-}
-.menu-tile-img {
-  width: 39px;
-  height: 52px;
-  border-radius: 3px;
-}
 .menu-tile-text {
-  font-size: 18px;
+  font-size: 19px;
   font-weight: bold;
+  font-family: sans-serif;
   white-space: nowrap;
-  width: 38px;
+  width: 34px;
   text-align: center;
 }
 .menu-footer {
   position: absolute;
-  bottom: 8px;
+  bottom: 6px;
   left: 0;
   width: 100%;
   flex-direction: row;
   justify-content: center;
-  padding: 4px 0;
 }
 .menu-btn {
-  height: 40px;
+  height: 36px;
   width: 68px;
-  font-size: 16px;
+  font-size: 15px;
+  font-family: MiSans;
   color: #fff;
-  background-color: #2563d6;
+  background-color: #262626;
   border: none;
-  border-radius: 20px;
+  border-radius: 18px;
   margin-right: 8px;
 }
 .menu-close {
-  height: 40px;
+  height: 36px;
   width: 68px;
-  font-size: 16px;
+  font-size: 15px;
+  font-family: MiSans;
   color: #fff;
-  background-color: #00c853;
+  background-color: #262626;
   border: none;
-  border-radius: 20px;
+  border-radius: 18px;
 }
 
 .game-menu-card {
-  width: 180px;
-  background-color: #1a2b4a;
+  width: 150px;
+  background-color: #000000;
   border-radius: 8px;
-  border: 1px solid #3a5580;
+  border: 1px solid #333;
   flex-direction: column;
   align-items: center;
 }
 .game-menu-item {
-  width: 160px;
+  width: 130px;
   height: 40px;
   font-size: 16px;
+  font-family: MiSans;
   color: #fff;
-  background-color: #c62828;
+  background-color: #262626;
   border: none;
   border-radius: 6px;
-  margin: 12px;
+  margin: 10px;
 }
 
 /* 结果 */
 .result-card {
-  width: 190px;
-  background-color: #132440;
-  border-radius: 10px;
-  border: 1px solid #3a5580;
-  padding: 14px;
+  width: 170px;
+  background-color: #000000;
+  border-radius: 8px;
+  border: 1px solid #333;
+  padding: 12px;
   flex-direction: column;
   align-items: center;
 }
 .result-title {
-  font-size: 20px;
+  font-size: 21px;
   font-weight: bold;
   color: #ffd54a;
-  margin-bottom: 8px;
-}
-.result-fan {
-  font-size: 16px;
-  color: #7fcf9a;
   margin-bottom: 6px;
 }
+.result-fan {
+  font-size: 18px;
+  color: #7fcf9a;
+  margin-bottom: 5px;
+}
 .result-desc {
-  font-size: 13px;
+  font-size: 15px;
   color: #cfe0ff;
   text-align: center;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 .result-actions {
   flex-direction: column;

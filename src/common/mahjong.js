@@ -41,33 +41,8 @@ function tileColor(code) {
   return '#333333'
 }
 
-// 牌图片路径
-function tileImg(code) {
-  return '/common/tiles/' + code + '.png'
-}
-
-// 牌面样式模式: 'text' | 'placeholder' | 'custom'
-let tileStyleMode = 'custom'
-
-function setTileStyle(mode) {
-  if (['text', 'placeholder', 'custom'].includes(mode)) {
-    tileStyleMode = mode
-  }
-}
-
-function getTileStyle() {
-  return tileStyleMode
-}
-
 function getTileDisplay(code) {
-  const mode = tileStyleMode
-  if (mode === 'text') {
-    return { type: 'text', name: tileName(code), color: tileColor(code) }
-  }
-  if (mode === 'placeholder') {
-    return { type: 'image', img: '/common/tiles/placeholder/' + code + '.png' }
-  }
-  return { type: 'image', img: '/common/tiles/' + code + '.png' }
+  return { type: 'text', name: tileName(code), color: tileColor(code) }
 }
 
 function isHonor(code) {
@@ -472,7 +447,7 @@ function createGame(prevDealer) {
     hand.sort((a, b) => a.code.localeCompare(b.code))
     players.push({
       idx: i,
-      name: i === 0 ? '我' : '电脑' + i,
+      name: i === 0 ? '我' : ['小明', '小红', '小刚'][i - 1],
       hand,
       melds: [],         // [{type, code, tiles:[...]}]
       discards: [],      // [{code, id}]
@@ -557,9 +532,6 @@ export default {
   allTileCodes,
   tileName,
   tileColor,
-  tileImg,
-  setTileStyle,
-  getTileStyle,
   getTileDisplay,
   isHonor,
   tileNum,

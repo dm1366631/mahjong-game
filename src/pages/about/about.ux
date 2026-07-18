@@ -1,85 +1,33 @@
 <template>
   <div class="page">
-    <text class="title">关于</text>
+    <!-- 返回按钮 -->
+    <div class="back-pill" onclick="goBack">
+      <image class="back-icon" src="../../common/Back.png" />
+    </div>
 
-    <div class="content">
+    <!-- 应用信息卡片 -->
+    <div class="app-card">
       <text class="app-name">杭州麻将</text>
-      <text class="version">版本 {{version}}</text>
-      
-      <div class="info-section">
-        <text class="info-title">开发者</text>
-        <text class="info-text">openblack</text>
+      <text class="app-version">2.0</text>
+      <div class="app-icon-wrap">
+        <image class="app-icon-img" src="../../common/icon.png" />
       </div>
-      
-      <div class="info-section">
-        <text class="info-title">规则</text>
-        <text class="info-text">杭州麻将（白板财神）</text>
-      </div>
-      
-      <div class="info-section">
-        <text class="info-title">适配设备</text>
-        <text class="info-text">小米手环10 NFC</text>
-      </div>
-      
-      <div class="version-box" onclick="onVersionClick">
-        <text class="version-label">版本号</text>
-        <input class="version-input" type="text" value="{{version}}" disabled="true" />
-      </div>
-      
-      <text class="unlock-hint" show="{{clickCount > 0 && clickCount < unlockCount}}">
-        再点击{{unlockCount - clickCount}}次解锁隐藏选项
-      </text>
-      
-      <text class="unlock-success" show="{{placeholderUnlocked}}">
-        ✓ 已解锁占位图样式
-      </text>
     </div>
 
-    <div class="footer">
-      <input class="btn back-btn" type="button" value="返回" onclick="goBack" />
-    </div>
+    <!-- 开发者 -->
+    <text class="developers">Developers</text>
+    <text class="dev-name">openblack</text>
+
+    <!-- 致谢 -->
+    <text class="thanks">Thanks</text>
+    <text class="thanks-name">无源流沙</text>
   </div>
 </template>
 
 <script>
 import router from "@system.router"
-import storage from "@system.storage"
 
 export default {
-  private: {
-    version: '1.0.0',
-    clickCount: 0,
-    unlockCount: 7,
-    placeholderUnlocked: false
-  },
-  
-  onInit() {
-    storage.get({
-      key: 'placeholderUnlocked',
-      success: (data) => {
-        this.placeholderUnlocked = (data === 'true')
-      },
-      fail: () => {}
-    })
-  },
-  
-  onVersionClick() {
-    if (this.placeholderUnlocked) return
-    
-    this.clickCount++
-    
-    if (this.clickCount >= this.unlockCount) {
-      this.placeholderUnlocked = true
-      storage.set({
-        key: 'placeholderUnlocked',
-        value: 'true',
-        success: () => {},
-        fail: () => {}
-      })
-      this.clickCount = 0
-    }
-  },
-  
   goBack() {
     router.back()
   }
@@ -89,117 +37,128 @@ export default {
 <style>
 .page {
   flex-direction: column;
+  align-items: center;
   width: 100%;
   height: 100%;
-  background-color: #0f1729;
+  background-color: #000000;
+  font-family: MiSans;
+  padding-top: 100px;
 }
 
-.title {
-  font-size: 18px;
-  font-weight: bold;
-  color: #ffd54a;
-  text-align: center;
-  padding: 8px 0;
-  border-bottom: 1px solid #2a4060;
-}
-
-.content {
-  flex: 1;
-  flex-direction: column;
-  padding: 12px;
+/* 返回按钮 */
+.back-pill {
+  position: absolute;
+  left: 55px;
+  top: 21px;
+  width: 102px;
+  height: 72px;
+  background-color: #262626;
+  border-radius: 36px;
   align-items: center;
+  justify-content: center;
+  border-width: 3px;
+  border-color: rgba(255, 255, 255, 0.06);
+}
+.back-icon {
+  width: 30px;
+  height: 30px;
 }
 
-.app-name {
-  font-size: 22px;
-  font-weight: bold;
-  color: #ffd54a;
-  margin-bottom: 4px;
-}
-
-.version {
-  font-size: 13px;
-  color: #8aa0c4;
+/* 应用信息卡片 */
+.app-card {
+  width: 186px;
+  height: 186px;
+  border-radius: 43px;
+  background-color: #262626;
+  border-width: 3px;
+  border-color: #262626;
   margin-bottom: 16px;
 }
 
-.info-section {
-  width: 100%;
-  flex-direction: row;
-  justify-content: space-between;
-  padding: 8px 12px;
-  background-color: #1a2b4a;
-  border-radius: 6px;
-  margin-bottom: 6px;
+/* 应用名称 */
+.app-name {
+  position: absolute;
+  left: 19px;
+  top: 20px;
+  width: 154px;
+  height: 45px;
+  font-size: 32px;
+  font-weight: 500;
+  color: #ffffff;
+  text-align: left;
 }
 
-.info-title {
-  font-size: 13px;
-  color: #8aa0c4;
+/* 版本号 */
+.app-version {
+  position: absolute;
+  left: 19px;
+  top: 66px;
+  width: 46px;
+  height: 42px;
+  font-size: 32px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: right;
 }
 
-.info-text {
-  font-size: 13px;
-  color: #cfe0ff;
+/* 应用图标 */
+.app-icon-wrap {
+  position: absolute;
+  left: 93px;
+  top: 88px;
+  width: 85px;
+  height: 85px;
+  border-radius: 43px;
+}
+.app-icon-img {
+  width: 85px;
+  height: 85px;
+  border-radius: 43px;
 }
 
-.version-box {
-  width: 100%;
-  flex-direction: column;
-  padding: 10px;
-  background-color: #132440;
-  border-radius: 6px;
-  margin-top: 12px;
-  align-items: center;
-}
-
-.version-label {
-  font-size: 12px;
-  color: #8aa0c4;
-  margin-bottom: 6px;
-}
-
-.version-input {
-  width: 90px;
-  height: 32px;
-  font-size: 13px;
-  color: #cfe0ff;
+/* 开发者 */
+.developers {
+  position: absolute;
+  left: 18px;
+  top: 292px;
+  width: 177px;
+  height: 42px;
+  font-size: 32px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
   text-align: center;
-  background-color: #1a2b4a;
-  border: 1px solid #3a5580;
-  border-radius: 4px;
 }
-
-.unlock-hint {
-  font-size: 11px;
-  color: #7fcf9a;
-  margin-top: 8px;
+.dev-name {
+  position: absolute;
+  left: 18px;
+  top: 334px;
+  width: 177px;
+  height: 42px;
+  font-size: 32px;
+  font-weight: 500;
+  color: #ffffff;
+  text-align: center;
 }
-
-.unlock-success {
-  font-size: 13px;
-  color: #7fcf9a;
-  margin-top: 8px;
-  font-weight: bold;
+.thanks {
+  position: absolute;
+  left: 18px;
+  top: 376px;
+  width: 177px;
+  height: 42px;
+  font-size: 32px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
 }
-
-.footer {
-  padding: 8px 12px;
-  border-top: 1px solid #2a4060;
-  align-items: center;
-}
-
-.btn {
-  height: 36px;
-  border-radius: 6px;
-  font-size: 15px;
-  border: none;
-}
-
-.back-btn {
-  width: 120px;
-  color: #cfe0ff;
-  background-color: transparent;
-  border: 1px solid #3a5580;
+.thanks-name {
+  position: absolute;
+  left: 18px;
+  top: 418px;
+  width: 177px;
+  height: 42px;
+  font-size: 32px;
+  font-weight: 500;
+  color: #ffffff;
+  text-align: center;
 }
 </style>
