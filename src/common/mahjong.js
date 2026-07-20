@@ -297,7 +297,7 @@ function countQuadruples(handCodes, caishenCode) {
   return quad
 }
 
-// ============ 番数计算 (杭州麻将 - 基于麻将来了规则) ============
+// ============ 番数计算  ============
 // 返回 { fan, desc[] }
 // 1倍: 平胡
 // 2倍: 杠开, 七对, 爆头
