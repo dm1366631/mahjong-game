@@ -43,6 +43,7 @@ export default {
   background-color: #000000;
   font-family: MiSans;
   padding-top: 100px;
+  overflow: hidden;
 }
 
 /* 返回按钮 */

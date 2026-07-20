@@ -10,19 +10,18 @@
       <input class="btn" type="button" value="赞助" onclick="showDonate" />
     </div>
 
-    <!-- 底层遮罩 -->
-    <div class="bg-mask" show="{{showDonatePanel || showRulesPanel}}"></div>
-
     <div class="overlay" show="{{showDonatePanel}}">
+      <div class="bg-mask"></div>
       <div class="donate-panel">
         <text class="donate-title">赞助开发者</text>
         <image class="qr-img" src="../../common/qr.png" />
         <text class="donate-desc">感谢您的支持</text>
-        <input class="btn donate-close" type="button" value="关闭" onclick="closeDonate" />
+        <input class="btn donate-close" style="background-color:#262626;" type="button" value="关闭" onclick="closeDonate" />
       </div>
     </div>
 
     <div class="overlay" show="{{showRulesPanel}}">
+      <div class="bg-mask"></div>
       <div class="rules-panel">
         <text class="rules-panel-title">杭州麻将规则详解</text>
         <div class="rules-scroll">
@@ -69,7 +68,7 @@
           <text class="rules-text">·财神不能打出</text>
           <text class="rules-text">·自摸和庄家加倍可叠加</text>
         </div>
-        <input class="btn rules-close" type="button" value="关闭" onclick="closeRules" />
+        <input class="btn rules-close" style="background-color:#262626;" type="button" value="关闭" onclick="closeRules" />
       </div>
     </div>
   </div>
@@ -131,15 +130,16 @@ export default {
   height: 100%;
   background-color: #000000;
   font-family: MiSans;
+  overflow: hidden;
 }
 .title {
-  font-size: 32px;
+  font-size: 40px;
   font-weight: bold;
   color: #ffffff;
   margin-top: 52px;
 }
 .score {
-  font-size: 18px;
+  font-size: 23px;
   color: #7fcf9a;
   margin-top: 6px;
 }
@@ -151,10 +151,10 @@ export default {
   width: 100%;
 }
 .btn {
-  width: 180px;
-  height: 50px;
+  width: 200px;
+  height: 58px;
   border-radius: 45px;
-  font-size: 22px;
+  font-size: 27px;
   font-family: MiSans;
   color: #ffffff;
   border: none;
@@ -172,7 +172,7 @@ export default {
   padding: 14px;
 }
 .donate-title {
-  font-size: 18px;
+  font-size: 23px;
   font-weight: bold;
   color: #ffd54a;
   margin-bottom: 10px;
@@ -184,16 +184,16 @@ export default {
   margin-bottom: 8px;
 }
 .donate-desc {
-  font-size: 15px;
+  font-size: 19px;
   color: #cfe0ff;
   margin-bottom: 10px;
 }
 .donate-close {
-  background-color: #e23b3b;
-  height: 38px;
+  background-color: #262626;
+  height: 46px;
   width: 100%;
   border-radius: 8px;
-  font-size: 17px;
+  font-size: 21px;
   font-family: MiSans;
   color: #fff;
   border: none;
@@ -219,6 +219,25 @@ export default {
   background-color: rgba(0, 0, 0, 0.85);
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+}
+.donate-panel {
+  width: 200px;
+  background-color: #000000;
+  border-radius: 10px;
+  border: 1px solid #333;
+  flex-direction: column;
+  align-items: center;
+  padding: 14px;
+  position: relative;
+  z-index: 1;
+}
+.rules-panel-title {
+  font-size: 23px;
+  font-weight: bold;
+  color: #ffd54a;
+  text-align: center;
+  margin-bottom: 8px;
 }
 .rules-panel {
   width: 280px;
@@ -228,13 +247,8 @@ export default {
   border: 1px solid #333;
   flex-direction: column;
   padding: 14px;
-}
-.rules-panel-title {
-  font-size: 18px;
-  font-weight: bold;
-  color: #ffd54a;
-  text-align: center;
-  margin-bottom: 8px;
+  position: relative;
+  z-index: 1;
 }
 .rules-scroll {
   flex: 1;
@@ -242,24 +256,24 @@ export default {
   overflow: scroll;
 }
 .rules-section {
-  font-size: 16px;
+  font-size: 21px;
   font-weight: bold;
   color: #7fcf9a;
   margin-top: 8px;
   margin-bottom: 4px;
 }
 .rules-text {
-  font-size: 14px;
+  font-size: 18px;
   color: #cfe0ff;
   margin: 2px 0;
 }
 .rules-close {
-  background-color: #e23b3b;
+  background-color: #262626;
   margin-top: 8px;
-  height: 38px;
+  height: 46px;
   width: 100%;
   border-radius: 8px;
-  font-size: 17px;
+  font-size: 21px;
   font-family: MiSans;
   color: #fff;
   border: none;
