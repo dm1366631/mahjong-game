@@ -85,7 +85,6 @@
         <text class="result-fan">{{resultFan}}</text>
         <text class="result-desc">{{resultDesc}}</text>
         <div class="result-actions">
-          <input class="act" type="button" value="再来一局" onclick="startGame" />
           <input class="act result-back" type="button" value="返回菜单" onclick="goMenu" />
         </div>
       </div>
