@@ -1,3 +1,6 @@
+<a href="https://astrobox.online/open?source=res&res=杭州麻将&provider=official" target="_blank" rel="noopener noreferrer">
+  <img src="https://astrobox.online/goab/en/white.svg">
+</a>
 ## 快速上手
 
 ### 1. 开发
