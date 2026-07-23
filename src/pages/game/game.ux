@@ -451,16 +451,16 @@ export default {
     this.message = p.name + ' 碰 ' + M.tileName(code)
     this.addLog(p.name + ' 碰', '#ffd54a')
     this.syncView()
-    this.later(() => {
-      if (idx === 0) {
+    if (idx === 0) {
+      this.later(() => {
         this.mode = 'discard'
         M.ui.drawnTileId = -1
         this.message = '碰后请打出'
         this.syncView()
-      } else {
-        this.aiDiscard(idx)
-      }
-    }, 250)
+      }, 250)
+    } else {
+      this.aiDiscard(idx)
+    }
   },
 
   applyGang(idx, code, fromIdx) {
@@ -524,7 +524,7 @@ export default {
       this.syncView()
     } else {
       this.syncView()
-      this.later(() => this.aiDiscard(idx), 250)
+      this.aiDiscard(idx)
     }
   },
 
@@ -549,16 +549,16 @@ export default {
     this.message = p.name + ' 吃 ' + M.tileName(code)
     this.addLog(p.name + ' 吃', '#2563d6')
     this.syncView()
-    this.later(() => {
-      if (idx === 0) {
+    if (idx === 0) {
+      this.later(() => {
         this.mode = 'discard'
         M.ui.drawnTileId = -1
         this.message = '吃后请打出'
         this.syncView()
-      } else {
-        this.aiDiscard(idx)
-      }
-    }, 250)
+      }, 250)
+    } else {
+      this.aiDiscard(idx)
+    }
   },
 
   // ============ AI 回合 ============
@@ -593,14 +593,12 @@ export default {
       this.mode = 'wait'
       this.message = g.players[seat].name + ' 摸牌'
       this.syncView()
-      this.later(() => {
-        const tile = M.drawTile(g, seat)
-        if (!tile) { this.endDraw(); return }
-        g.players[seat].hand.push(tile)
-        M.sortHand(g.players[seat].hand)
-        this.syncView()
-        this.later(() => this.aiDiscard(seat), 225)
-      }, 200)
+      const tile = M.drawTile(g, seat)
+      if (!tile) { this.endDraw(); return }
+      g.players[seat].hand.push(tile)
+      M.sortHand(g.players[seat].hand)
+      this.syncView()
+      this.aiDiscard(seat)
     }
   },
 
